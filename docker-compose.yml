@@ -1,0 +1,41 @@
+version: "3.9"
+
+# "Production-like" way to run the project: the API against a real PostgreSQL instance
+# instead of the local SQLite file. See README.md for local (SQLite) vs. this setup.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sales
+      POSTGRES_PASSWORD: sales
+      POSTGRES_DB: sales_metrics
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sales -d sales_metrics"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://sales:sales@db:5432/sales_metrics
+      API_KEY: ${API_KEY:-changeme}
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-60}
+    ports:
+      - "8000:8000"
+    # Seed the database on first run (the script is idempotent -- it skips seeding if data
+    # already exists), then start the API.
+    command: >
+      sh -c "python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  postgres_data:

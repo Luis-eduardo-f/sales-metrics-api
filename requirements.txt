@@ -1,0 +1,16 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy==2.0.36
+pydantic==2.10.4
+pydantic-settings==2.7.1
+faker==33.1.0
+cachetools==5.5.0
+python-dotenv==1.0.1
+
+# PostgreSQL driver -- only loaded by SQLAlchemy when DATABASE_URL points at Postgres
+# (e.g. via docker-compose). Not required for the default local SQLite setup.
+psycopg2-binary==2.9.10
+
+# Testing
+pytest==8.3.4
+httpx==0.28.1
