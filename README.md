@@ -1,5 +1,9 @@
 # sales-metrics-api
 
+![tests](https://github.com/Luis-eduardo-f/sales-metrics-api/actions/workflows/tests.yml/badge.svg)
+![license](https://img.shields.io/github/license/Luis-eduardo-f/sales-metrics-api)
+![python](https://img.shields.io/badge/python-3.11%2B-blue)
+
 API de analytics em **Python + FastAPI + SQLAlchemy**, servindo métricas agregadas (receita ao longo do tempo, produtos mais vendidos, histórico de clientes) sobre um dataset sintético de vendas — o foco não é CRUD, e sim consultas analíticas rápidas, autenticadas e cacheadas sobre dados relacionais. O projeto roda localmente sem nenhuma infraestrutura externa (SQLite) e é "Postgres-ready" via `docker-compose`.
 
 ## Arquitetura
@@ -147,6 +151,76 @@ Exemplo de chamada autenticada:
 
 ```bash
 curl -H "X-API-Key: changeme" "http://127.0.0.1:8000/metrics/revenue?group_by=month"
+```
+
+## Exemplo de uso
+
+Saída real, capturada rodando a API localmente (SQLite, `python -m app.seed` seguido de
+`uvicorn app.main:app`) e chamando os endpoints com `curl` — não é um exemplo inventado.
+
+**`GET /health`** (não exige autenticação):
+
+```bash
+curl -s http://127.0.0.1:8000/health
+```
+
+```json
+{
+    "status": "ok"
+}
+```
+
+**`GET /metrics/top-products?limit=3`**, autenticado com `X-API-Key: changeme` (valor padrão de
+`API_KEY` em `.env.example`):
+
+```bash
+curl -s -H "X-API-Key: changeme" "http://127.0.0.1:8000/metrics/top-products?limit=3"
+```
+
+```json
+{
+    "start_date": null,
+    "end_date": null,
+    "limit": 3,
+    "products": [
+        {
+            "product_id": 34,
+            "name": "Cloned full-range attitude",
+            "category": "Toys & Games",
+            "revenue": 57087.63,
+            "units_sold": 117
+        },
+        {
+            "product_id": 21,
+            "name": "Compatible secondary array",
+            "category": "Sports & Outdoors",
+            "revenue": 48478.91,
+            "units_sold": 118
+        },
+        {
+            "product_id": 31,
+            "name": "Multi-layered executive info-mediaries",
+            "category": "Toys & Games",
+            "revenue": 47561.93,
+            "units_sold": 121
+        }
+    ]
+}
+```
+
+(Nomes de produto vêm do `Faker` com seed fixa em `app/seed.py`, por isso são strings
+sintéticas sem sentido comercial — o que importa é a agregação de receita/unidades por trás.)
+
+**Mesma chamada sem o header `X-API-Key`** (rota protegida, `401 Unauthorized`):
+
+```bash
+curl -s "http://127.0.0.1:8000/metrics/top-products?limit=3"
+```
+
+```json
+{
+    "detail": "Missing API key. Provide a valid 'X-API-Key' header."
+}
 ```
 
 ## Como rodar com Docker (PostgreSQL)
